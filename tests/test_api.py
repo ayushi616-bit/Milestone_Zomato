@@ -22,6 +22,20 @@ def mock_api_store() -> MagicMock:
 client = TestClient(app)
 
 
+def test_root_endpoint() -> None:
+    """Verify GET / returns healthy status."""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
+
+
+def test_health_endpoint() -> None:
+    """Verify GET /health returns healthy status."""
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
+
+
 def test_locations_endpoint(mock_api_store) -> None:
     """Verify GET /api/locations returns mocked locations."""
     response = client.get("/api/locations")

@@ -68,6 +68,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    """Health check endpoint returning a simple status message."""
+    return {"status": "healthy", "service": "TasteFinder AI API"}
+
+
+@app.get("/health")
+def read_health():
+    """Detailed health check endpoint."""
+    return {"status": "healthy", "service": "TasteFinder AI API"}
 
 class RecommendationRequest(BaseModel):
     """Pydantic model representing the client request query parameters."""
