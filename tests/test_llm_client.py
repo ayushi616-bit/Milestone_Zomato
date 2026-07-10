@@ -27,10 +27,11 @@ def client() -> LLMClient:
     """An LLMClient with a test API key."""
     return LLMClient(
         api_key="test-key-123",
-        model="gpt-4o-mini",
+        model="llama-3.1-8b-instant",
         temperature=0.3,
         timeout=10,
         max_retries=1,
+        provider="groq",
     )
 
 
@@ -38,26 +39,23 @@ def client() -> LLMClient:
 
 
 class TestClientInit:
-    def test_no_api_key_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_unsupported_provider_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
         import src.config
         import src.llm.client
         new_settings = src.config.Settings(
-            openai_api_key=None,
-            groq_api_key=None,
+            groq_api_key="test-key-123",
             llm_provider="openai",
             llm_model="gpt-4o-mini",
         )
         monkeypatch.setattr(src.config, "settings", new_settings)
         monkeypatch.setattr(src.llm.client, "settings", new_settings)
-        client = LLMClient(api_key=None, provider="openai")
-        with pytest.raises(LLMError, match="No OpenAI API key"):
-            _ = client.client
+        with pytest.raises(LLMError, match="Unsupported provider"):
+            _ = LLMClient(api_key=None, provider="openai")
 
     def test_no_api_key_raises_groq(self, monkeypatch: pytest.MonkeyPatch) -> None:
         import src.config
         import src.llm.client
         new_settings = src.config.Settings(
-            openai_api_key=None,
             groq_api_key=None,
             llm_provider="groq",
             llm_model="llama-3.1-8b-instant",
@@ -69,18 +67,18 @@ class TestClientInit:
             _ = client.client
 
     def test_lazy_init(self) -> None:
-        client = LLMClient(api_key="test-key", provider="openai")
+        client = LLMClient(api_key="test-key", provider="groq")
         assert client._client is None
         # Accessing .client triggers init
         _ = client.client
         assert client._client is not None
 
     def test_custom_model(self) -> None:
-        client = LLMClient(api_key="key", model="gpt-4o", provider="openai")
-        assert client._model == "gpt-4o"
+        client = LLMClient(api_key="key", model="llama-3.1-8b-instant", provider="groq")
+        assert client._model == "llama-3.1-8b-instant"
 
     def test_custom_temperature(self) -> None:
-        client = LLMClient(api_key="key", temperature=0.5, provider="openai")
+        client = LLMClient(api_key="key", temperature=0.5, provider="groq")
         assert client._temperature == 0.5
 
 

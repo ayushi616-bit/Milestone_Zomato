@@ -17,25 +17,22 @@ def test_settings_defaults() -> None:
 
 
 def test_settings_reads_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LLM_PROVIDER", "openai")
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key-123")
-    monkeypatch.setenv("LLM_MODEL", "gpt-4o")
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key-123")
+    monkeypatch.setenv("LLM_MODEL", "llama-3.1-8b-instant")
 
     settings = get_settings()
-    assert settings.llm_provider == "openai"
-    assert settings.openai_api_key == "test-key-123"
-    assert settings.llm_model == "gpt-4o"
-
+    assert settings.llm_provider == "groq"
+    assert settings.groq_api_key == "test-key-123"
+    assert settings.llm_model == "llama-3.1-8b-instant"
 
 
 def test_settings_no_hardcoded_secrets() -> None:
     """Ensure API key comes from environment, not hardcoded."""
     settings = Settings(
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
         groq_api_key=os.getenv("GROQ_API_KEY"),
         llm_provider="groq",
         llm_model="llama3-8b-8192",
     )
-    assert settings.openai_api_key is None or isinstance(settings.openai_api_key, str)
     assert settings.groq_api_key is None or isinstance(settings.groq_api_key, str)
 

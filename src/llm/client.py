@@ -26,15 +26,15 @@ class LLMError(Exception):
 
 
 class LLMClient:
-    """Wrapper around the OpenAI and Groq chat completions API.
+    """Wrapper around the Groq chat completions API.
 
     Args:
-        api_key: LLM API key. Defaults to ``settings.groq_api_key`` or ``settings.openai_api_key``.
+        api_key: LLM API key. Defaults to ``settings.groq_api_key``.
         model: Model name. Defaults to ``settings.llm_model``.
         temperature: Sampling temperature. Defaults to ``settings.llm_temperature``.
         timeout: Request timeout in seconds. Defaults to ``settings.llm_timeout_seconds``.
         max_retries: Number of retries on failure. Defaults to ``settings.llm_max_retries``.
-        provider: Provider name ("openai" or "groq"). Defaults to ``settings.llm_provider``.
+        provider: Provider name ("groq"). Defaults to ``settings.llm_provider``.
     """
 
     def __init__(
@@ -48,11 +48,10 @@ class LLMClient:
     ) -> None:
         self._provider = (provider or settings.llm_provider).lower().strip()
         
-        if self._provider == "groq":
-            self._api_key = api_key or settings.groq_api_key
-        else:
-            self._api_key = api_key or settings.openai_api_key
+        if self._provider != "groq":
+            raise LLMError(f"Unsupported provider: '{self._provider}'. Only 'groq' is supported.")
             
+        self._api_key = api_key or settings.groq_api_key
         self._model = model or settings.llm_model
         self._temperature = temperature if temperature is not None else settings.llm_temperature
         self._timeout = timeout or settings.llm_timeout_seconds
@@ -64,26 +63,15 @@ class LLMClient:
         """Lazy-initialize the client."""
         if self._client is None:
             if not self._api_key:
-                if self._provider == "groq":
-                    raise LLMError(
-                        "No Groq API key configured. Set GROQ_API_KEY in your .env file."
-                    )
-                else:
-                    raise LLMError(
-                        "No OpenAI API key configured. Set OPENAI_API_KEY in your .env file."
-                    )
+                raise LLMError(
+                    "No Groq API key configured. Set GROQ_API_KEY in your .env file."
+                )
             
-            if self._provider == "groq":
-                self._client = OpenAI(
-                    base_url="https://api.groq.com/openai/v1",
-                    api_key=self._api_key,
-                    timeout=self._timeout,
-                )
-            else:
-                self._client = OpenAI(
-                    api_key=self._api_key,
-                    timeout=self._timeout,
-                )
+            self._client = OpenAI(
+                base_url="https://api.groq.com/openai/v1",
+                api_key=self._api_key,
+                timeout=self._timeout,
+            )
         return self._client
 
     def generate(self, messages: list[dict[str, str]]) -> str:

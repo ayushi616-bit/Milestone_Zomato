@@ -18,7 +18,6 @@ class Settings:
     """Runtime settings and constants."""
 
     # LLM provider
-    openai_api_key: str | None
     groq_api_key: str | None
     llm_provider: str  # "openai" or "groq"
     llm_model: str
@@ -51,7 +50,6 @@ def get_settings() -> Settings:
     default_model = "llama-3.1-8b-instant" if provider == "groq" else "gpt-4o-mini"
     
     return Settings(
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
         groq_api_key=os.getenv("GROQ_API_KEY"),
         llm_provider=provider,
         llm_model=os.getenv("LLM_MODEL", default_model),

@@ -43,12 +43,27 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS to allow access from the React frontend
-allowed_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "*").split(",") if origin.strip()]
+# Configure CORS to allow access from the React frontend.
+# If ALLOWED_ORIGINS is unset or empty, it defaults to "*" (e.g. for deployment / preview).
+raw_origins = os.getenv("ALLOWED_ORIGINS", "*").strip()
+if not raw_origins:
+    raw_origins = "*"
+
+allowed_origins = [
+    origin.strip() 
+    for origin in raw_origins.split(",") 
+    if origin.strip()
+]
+
+# If allowed_origins contains "*", allow_credentials must be False to avoid browser CORS errors
+allow_credentials = True
+if "*" in allowed_origins:
+    allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
