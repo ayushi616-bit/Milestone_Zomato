@@ -34,6 +34,37 @@ def _load_and_preprocess() -> list[Restaurant]:
     if _cache is not None:
         return _cache
 
+    # Check for local preprocessed JSON cache first
+    import json
+    from pathlib import Path
+    from src.data.models import CostBucket
+
+    json_path = Path(__file__).resolve().parent / "zomato_preprocessed.json"
+    if json_path.exists():
+        logger.info("Loading preprocessed dataset from local JSON cache: %s", json_path)
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            
+            _cache = []
+            for item in data:
+                _cache.append(
+                    Restaurant(
+                        id=item["id"],
+                        name=item["name"],
+                        location=item["location"],
+                        cuisines=item["cuisines"],
+                        cost_for_two=item["cost_for_two"],
+                        cost_bucket=CostBucket(item["cost_bucket"]),
+                        rating=item["rating"],
+                        metadata=item["metadata"]
+                    )
+                )
+            logger.info("Dataset ready: %d restaurants loaded from local JSON cache.", len(_cache))
+            return _cache
+        except Exception as e:
+            logger.warning("Failed to load local JSON cache, falling back to Hugging Face: %s", e)
+
     logger.info("Cache miss — loading and preprocessing dataset …")
     raw_rows: list[dict[str, Any]] = load_raw_dataset()
     _cache = preprocess_records(raw_rows)
