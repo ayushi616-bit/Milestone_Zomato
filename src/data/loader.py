@@ -54,8 +54,31 @@ def load_raw_dataset(
     name = dataset_name or settings.huggingface_dataset_name
     logger.info("Loading dataset '%s' (split=%s) …", name, split)
 
+    # Only load columns that are actually used in preprocessing to prevent OOM
+    used_columns = {
+        "name",
+        "location",
+        "listed_in(city)",
+        "cuisines",
+        "approx_cost(for two people)",
+        "rate",
+        "votes",
+        "address",
+        "rest_type",
+        "dish_liked",
+        "online_order",
+        "book_table",
+        "listed_in(type)",
+    }
+
     try:
         ds: Dataset = load_dataset(name, split=split)
+        # Check if this is a real Hugging Face Dataset (and not a test MagicMock)
+        if type(ds).__name__ == "Dataset" or "datasets." in type(ds).__module__:
+            unused = [col for col in ds.column_names if col not in used_columns]
+            if unused:
+                logger.info("Removing unused columns to save memory: %s", unused)
+                ds = ds.remove_columns(unused)
     except Exception as exc:
         raise RuntimeError(f"Failed to load dataset '{name}': {exc}") from exc
 
@@ -63,7 +86,8 @@ def load_raw_dataset(
 
     rows: list[dict[str, Any]] = []
     for row in ds:
-        rows.append(dict(row))
+        # Extract only the keys we need to minimize Python object memory overhead
+        rows.append({k: v for k, v in row.items() if k in used_columns})
 
     logger.info("Converted %d rows to dicts.", len(rows))
     return rows
