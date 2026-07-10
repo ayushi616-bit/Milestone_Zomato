@@ -84,12 +84,25 @@ def load_raw_dataset(
 
     logger.info("Dataset loaded: %d rows, columns=%s", len(ds), ds.column_names)
 
+    seen = set()
     rows: list[dict[str, Any]] = []
     for row in ds:
+        name_val = str(row.get("name") or "").strip().lower()
+        address_val = str(row.get("address") or "").strip().lower()
+        loc_val = str(row.get("location") or "").strip().lower()
+        
+        # Unique restaurant key: (name, address) or (name, location)
+        addr_clean = address_val if len(address_val) > 3 else loc_val
+        key = (name_val, addr_clean)
+        
+        if key in seen:
+            continue
+        seen.add(key)
+
         # Extract only the keys we need to minimize Python object memory overhead
         rows.append({k: v for k, v in row.items() if k in used_columns})
 
-    logger.info("Converted %d rows to dicts.", len(rows))
+    logger.info("Converted %d unique rows to dicts (deduplicated from %d raw rows).", len(rows), len(ds))
     return rows
 
 
