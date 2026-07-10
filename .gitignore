@@ -38,3 +38,7 @@ Thumbs.db
 # Local data cache (Phase 1+)
 .cache/
 data/processed/
+
+# Node
+node_modules/
+
