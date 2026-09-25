@@ -6,6 +6,7 @@ recommendations, preloading the dataset at startup to minimize latency.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -26,13 +27,10 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle context manager to load and cache the dataset on startup."""
-    logger.info("Initializing dataset cache at startup...")
-    try:
-        # Force load/cache of the Hugging Face dataset
-        get_restaurants()
-        logger.info("Dataset cache preloaded successfully.")
-    except Exception as e:
-        logger.exception("Failed to preload dataset cache during startup:")
+    logger.info("Initializing dataset cache at startup (non-blocking)...")
+    # Run the cache preloading in a background thread to prevent blocking startup.
+    # This allows FastAPI to start listening and pass health checks immediately.
+    asyncio.create_task(asyncio.to_thread(get_restaurants))
     yield
 
 
